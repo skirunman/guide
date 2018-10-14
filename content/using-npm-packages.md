@@ -86,6 +86,39 @@ import 'npm-package-name/stylesheets/styles.css';
 
 > When importing CSS from a JavaScript file, that CSS is not bundled with the rest of the CSS processed with the Meteor Build tool, but instead is put in your app's `<head>` tag inside `<style>...</style>` after the main concatenated CSS file.
 
+
+<h2 id="recompile">Recompiling npm packages</h2>
+
+Meteor does not recompile packages installed in your `node_modules` by default. However, compilation of specific npm packages (for example, to support older browsers that the package author neglected) can now be enabled in one of two ways:
+
+Clone the package repository into your application's `/imports` directory, make any modifications necessary, then use `npm install` to link the-package into your `node_modules`:
+
+```
+meteor npm install imports/the-package
+```
+
+Meteor will compile the contents of the package exposed via `imports/the-package` and this compiled code will be used when you `import the-package` in any of the usual ways:
+
+```
+import stuff from "the-package"
+require("the-package") === require("/imports/the-package")
+import("the-package").then(...)
+```
+
+Install the package normally with `meteor npm install the-package`, then create a symbolic link to the installed package elsewhere in your application, outside of `node_modules`:
+
+```
+meteor npm install the-package
+cd imports
+ln -s ../node_modules/the-package .
+```
+
+Again, Meteor will compile the contents of the package because they are exposed outside of `node_modules` and the compiled code will be used whenever `the-package` is imported from `node_modules`.
+
+Note: this technique also works if you create symbolic links to individual files, rather than linking the entire package directory.
+
+In both cases, Meteor will compile the exposed code as if it was part of your application, using whatever compiler plugins you have installed. You can influence this compilation using `.babelrc` files or any other techniques you would normally use to configure compilation of application code.
+
 <h2 id="npm-shrinkwrap">npm Shrinkwrap</h2>
 
 `package.json` typically encodes a version range, and so each `npm install` command can sometimes lead to a different result if new versions have been published in the meantime. In order to ensure that you and the rest of your team are using the same exact same version of each package, it's a good idea to use `npm shrinkwrap` after making any dependency changes to `package.json`:
